@@ -1,0 +1,174 @@
+// Rental management — PostgreSQL
+// https://www.prisma.io/docs/orm/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  LESSOR
+  LESSEE
+}
+
+enum ContractStatus {
+  ACTIVE
+  ENDED
+}
+
+enum PaymentMethod {
+  CHAPA
+  CASH
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String   @unique
+  password  String
+  role      UserRole
+
+  /// Lessees invited by a lessor start as false until OTP verification.
+  isVerified Boolean @default(true)
+  otpCode    String?
+  otpExpires DateTime?
+
+  /// Lessor who invited this lessee (LESSEE only; audit trail).
+  invitedByLessorId String?
+  invitedByLessor   User?   @relation("LesseeInvitation", fields: [invitedByLessorId], references: [id], onDelete: SetNull)
+  invitedLessees    User[]  @relation("LesseeInvitation")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  propertiesAsLessor Property[] @relation("PropertyLessor")
+  contractsAsLessor  Contract[] @relation("ContractLessor")
+  contractsAsLessee  Contract[] @relation("ContractLessee")
+  payments           Payment[]  @relation("PaymentPayer")
+
+  @@index([role])
+  @@index([invitedByLessorId])
+}
+
+model Property {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  location    String
+  price       Float
+  isAvailable Boolean  @default(true)
+
+  lessorId String
+  lessor   User @relation("PropertyLessor", fields: [lessorId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contracts Contract[]
+
+  @@index([lessorId])
+}
+
+model Contract {
+  id          String   @id @default(cuid())
+  startDate   DateTime
+  endDate     DateTime?
+  status      ContractStatus @default(ACTIVE)
+
+  // IMPORTANT: locks rent value at contract time
+  rentAmount  Float
+
+  // monthly reminder day
+  reminderDay Int
+
+  propertyId String
+  lessorId   String
+  lesseeId   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  lessor   User     @relation("ContractLessor", fields: [lessorId], references: [id], onDelete: Restrict)
+  lessee   User     @relation("ContractLessee", fields: [lesseeId], references: [id], onDelete: Restrict)
+
+  payments Payment[]
+  reminders Reminder[]
+
+  @@index([propertyId])
+  @@index([lessorId])
+  @@index([lesseeId])
+  @@index([status])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  amount        Float
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+
+  month         Int
+  year          Int
+
+  // Chapa or manual proof support
+  transactionRef String?
+  proofImageURL  String?
+
+  contractId String
+  userId     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  payer    User     @relation("PaymentPayer", fields: [userId], references: [id], onDelete: Restrict)
+
+  lateFees LateFee[]
+
+  // Prevent duplicate monthly payments
+  @@unique([contractId, year, month])
+
+  @@index([contractId])
+  @@index([userId])
+  @@index([status])
+}
+
+model LateFee {
+  id        String   @id @default(cuid())
+  amount    Float
+  reason    String?
+
+  // ties to payment (not direct contract logic)
+  paymentId String
+
+  createdAt DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+}
+
+model Reminder {
+  id         String   @id @default(cuid())
+  contractId String
+  message    String
+  isLate     Boolean  @default(false)
+  
+  createdAt  DateTime @default(now())
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+}
