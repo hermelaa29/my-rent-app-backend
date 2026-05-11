@@ -34,6 +34,14 @@ export const paymentController = {
     res.status(201).json({ success: true, data });
   }),
 
+  verifyChapa: asyncHandler(async (req, res) => {
+    const { tx_ref } = req.query;
+    if (!tx_ref) throw new AppError('tx_ref is required', 400);
+    const data = await paymentService.verifyChapaPayment(tx_ref as string);
+    res.status(200).json({ success: true, data });
+  }),
+
+
   uploadProof: asyncHandler(async (req, res) => {
     const { id: lesseeId } = requireUser(req);
     const { id } = paymentIdParamSchema.parse(req.params);

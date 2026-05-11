@@ -15,6 +15,8 @@ async function main() {
   console.log('[SEED] All tables cleared.');
 
   const passwordHash = await bcrypt.hash('123456', 12);
+
+  // 1. Create LESSOR
   const lessor = await prisma.user.create({
     data: {
       name: 'Daniel Solomon',
@@ -25,11 +27,57 @@ async function main() {
       isVerified: true,
       isActive: true,
     },
-    select: { id: true, email: true, role: true },
   });
 
-  console.log(`[SEED] Lessor created: ${lessor.email} (${lessor.id})`);
-  console.log('[SEED] Done. Login: daniel.solomon@rentms.com / 123456');
+  // 2. Create LESSEE
+  const lessee = await prisma.user.create({
+    data: {
+      name: 'Abebe Bekele',
+      email: 'abebe.tenant@rentms.com',
+      phone: '0988776655',
+      password: passwordHash,
+      role: 'LESSEE',
+      isVerified: true,
+      isActive: true,
+    },
+  });
+
+  // 3. Create a Property
+  const property = await prisma.property.create({
+    data: {
+      title: 'Luxury Villa - Bole Atlas',
+      description: 'Stunning 4-bedroom villa with a private garden and modern amenities.',
+      location: 'Addis Ababa, Bole Atlas',
+      price: 2500,
+      isAvailable: false,
+      lessorId: lessor.id,
+    },
+  });
+
+  // 4. Create a Contract
+  await prisma.contract.create({
+    data: {
+      propertyId: property.id,
+      lessorId: lessor.id,
+      lesseeId: lessee.id,
+      startDate: new Date(),
+      endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+      rentAmount: 2500,
+      reminderDay: 5,
+      status: 'ACTIVE',
+    },
+  });
+
+  console.log('[SEED] Seeding complete.');
+  console.log('--------------------------------------------------');
+  console.log('LESSOR (Owner):');
+  console.log('  Email:    daniel.solomon@rentms.com');
+  console.log('  Password: 123456');
+  console.log('--------------------------------------------------');
+  console.log('LESSEE (Tenant):');
+  console.log('  Email:    abebe.tenant@rentms.com');
+  console.log('  Password: 123456');
+  console.log('--------------------------------------------------');
 }
 
 main()

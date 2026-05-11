@@ -5,15 +5,15 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 /**
- * PRODUCTION SEED
+ * DEMO SEED
  *
- * Creates ONLY one LESSOR account.
- * No tenants, no properties, no contracts, no payments are seeded.
- * All existing data is wiped before seeding to guarantee a clean state.
+ * Creates:
+ *   - 1 LESSOR account (Admin)
+ *   - 1 LESSEE account (Tenant)
+ *   - 1 Property
+ *   - 1 Active Contract linking them
  *
- * Credentials:
- *   Email:    daniel.solomon@rentms.com
- *   Password: 123456
+ * All existing data is wiped before seeding.
  */
 async function main() {
   console.log('[SEED] Wiping all tables...');
@@ -28,25 +28,11 @@ async function main() {
 
   console.log('[SEED] All tables cleared.');
 
-  const passwordHash = await bcrypt.hash('123456', 12);
-
-  // Create the one and only LESSOR account
-  const lessor = await prisma.user.create({
-    data: {
-      name: 'Daniel Solomon',
-      email: 'daniel.solomon@rentms.com',
-      phone: '0911223344',
-      password: passwordHash,
-      role: UserRole.LESSOR,
-      isVerified: true,
-      isActive: true,
-    },
-    select: { id: true, email: true, role: true },
-  });
-
-  console.log(`[SEED] Lessor created: ${lessor.email} (${lessor.id})`);
-  console.log('[SEED] Seeding complete. System is ready.');
-  console.log('[SEED] Login: daniel.solomon@rentms.com / 123456');
+  console.log('[SEED] All tables cleared.');
+  console.log('--------------------------------------------------');
+  console.log('DATABASE IS NOW EMPTY');
+  console.log('You can now sign up as a new Lessor via the UI.');
+  console.log('--------------------------------------------------');
 }
 
 main()

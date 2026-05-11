@@ -93,7 +93,43 @@ async function verifyPassword(plain: string, hash: string): Promise<boolean> {
 }
 
 export const authService = {
+  async lessorSignup(input: LessorSignupInput): Promise<{ token: string; user: PublicUser }> {
+    console.log(`[AUTH] Lessor signup attempt: ${input.email}`);
+    try {
+      const existingEmail = await prisma.user.findUnique({ where: { email: input.email } });
+      if (existingEmail) throw new AppError('Email already in use', 409);
+
+      const existingPhone = await prisma.user.findUnique({ where: { phone: input.phone } });
+      if (existingPhone) throw new AppError('Phone already in use', 409);
+
+      const hashed = await hashPassword(input.password);
+
+      const user = await prisma.user.create({
+        data: {
+          name: input.name,
+          email: input.email,
+          phone: input.phone,
+          password: hashed,
+          role: UserRole.LESSOR,
+          isVerified: true, // Auto-verified for now for simplicity, or we could add email verification later
+          isActive: true,
+        },
+      });
+
+      console.log(`[AUTH] Lessor signup successful: ${input.email}`);
+      return {
+        token: signAccessToken(user.id, user.role),
+        user: toPublicUser(user),
+      };
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      console.error(`[AUTH] Critical error during lessor signup for ${input.email}:`, err);
+      throw new AppError('Internal server error during signup', 500);
+    }
+  },
+
   async lessorLogin(input: LessorLoginInput): Promise<{ token: string; user: PublicUser }> {
+
     console.log(`[AUTH] Lessor login attempt: ${input.email}`);
     try {
       const user = await prisma.user.findUnique({ where: { email: input.email } });
@@ -407,4 +443,47 @@ export const authService = {
 
     return { message: 'Account activated and password set successfully. You can now log in.' };
   },
+
+  async tenantSignup(input: { email: string; name: string; password: string }): Promise<{ token: string; user: PublicUser }> {
+    console.log(`[AUTH] Tenant signup attempt: ${input.email}`);
+    
+    const user = await prisma.user.findUnique({ where: { email: input.email } });
+    
+    if (!user) {
+      throw new AppError('No invitation found for this email. Please contact your lessor.', 404);
+    }
+    
+    if (user.role !== UserRole.LESSEE) {
+      throw new AppError('This email is already registered as a Lessor.', 400);
+    }
+    
+    if (user.isActive) {
+      throw new AppError('Account is already active. Please log in.', 400);
+    }
+
+    // Optional: verify name matches to be a bit safer
+    if (user.name.toLowerCase() !== input.name.toLowerCase()) {
+      throw new AppError('Name does not match the one registered by your lessor.', 400);
+    }
+
+    const hashed = await hashPassword(input.password);
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashed,
+        isActive: true,
+        isVerified: true, // Mark as verified since they are signing up via known email
+        activationToken: null,
+        activationTokenExpires: null,
+      },
+    });
+
+    console.log(`[AUTH] Tenant signup successful: ${input.email}`);
+    return {
+      token: signAccessToken(updatedUser.id, updatedUser.role),
+      user: toPublicUser(updatedUser),
+    };
+  },
 };
+

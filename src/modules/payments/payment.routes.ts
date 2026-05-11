@@ -37,6 +37,8 @@ router.use(verifyToken);
 
 router.post('/', requireRole(UserRole.LESSEE), paymentController.create);
 router.post('/chapa/init', requireRole(UserRole.LESSEE), paymentController.initChapa);
+router.get('/chapa/verify', requireRole(UserRole.LESSEE), paymentController.verifyChapa);
+
 router.post(
   '/:id/proof',
   requireRole(UserRole.LESSEE),

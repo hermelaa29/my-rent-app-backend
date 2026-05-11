@@ -9,6 +9,9 @@ import { randomUUID } from 'node:crypto';
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../utils/app-error.js';
 import type { ChapaInitInput, CreatePaymentInput } from './payment.types.js';
+import { chapaService } from './chapa.service.js';
+import { env } from '../../utils/env.js';
+
 
 const userPublic = {
   id: true,
@@ -100,10 +103,16 @@ export const paymentService = {
   },
 
   async initChapa(lesseeId: string, input: ChapaInitInput) {
+    const user = await prisma.user.findUnique({ where: { id: lesseeId } });
+    if (!user) throw new AppError('User not found', 404);
+
     await assertLesseeOwnsContract(lesseeId, input.contractId);
+    
     const transactionRef = `chapa_${Date.now()}_${randomUUID().slice(0, 8)}`;
+    
+    // 1. Create a PENDING payment record
     try {
-      return await prisma.payment.create({
+      const payment = await prisma.payment.create({
         data: {
           contractId: input.contractId,
           userId: lesseeId,
@@ -111,11 +120,39 @@ export const paymentService = {
           month: input.month,
           year: input.year,
           method: PaymentMethod.CHAPA,
-          status: PaymentStatus.APPROVED,
+          status: PaymentStatus.PENDING,
           transactionRef,
         },
-        select: paymentSelect,
+        include: {
+          contract: {
+            include: { property: true }
+          }
+        }
       });
+
+      // 2. Initialize Chapa Transaction
+      const [firstName, ...lastNameParts] = user.name.split(' ');
+      const lastName = lastNameParts.join(' ') || 'Tenant';
+
+      const checkoutUrl = await chapaService.initialize({
+        amount: input.amount,
+        currency: 'ETB',
+        email: user.email,
+        first_name: firstName,
+        last_name: lastName,
+        tx_ref: transactionRef,
+        callback_url: `${env.isProduction ? 'https://your-api.com' : 'http://localhost:3000'}/api/payments/chapa/webhook`, // Optional
+        return_url: `${env.isProduction ? 'https://your-app.com' : 'http://localhost:5173'}/payments/success?tx_ref=${transactionRef}`,
+        customization: {
+          title: `Rent Payment - ${payment.contract.property.title}`,
+          description: `Payment for ${input.month}/${input.year}`,
+        },
+      });
+
+      return {
+        payment,
+        checkoutUrl,
+      };
     } catch (error: unknown) {
       if (isDuplicatePaymentError(error)) {
         throw new AppError('A payment already exists for this contract and month', 409);
@@ -123,6 +160,27 @@ export const paymentService = {
       throw error;
     }
   },
+
+  async verifyChapaPayment(tx_ref: string) {
+    const payment = await prisma.payment.findFirst({
+      where: { transactionRef: tx_ref },
+    });
+
+    if (!payment) throw new AppError('Payment not found', 404);
+    if (payment.status === PaymentStatus.PAID) return payment;
+
+    const isSuccess = await chapaService.verify(tx_ref);
+    if (isSuccess) {
+      return prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: PaymentStatus.PAID },
+        select: paymentSelect,
+      });
+    }
+
+    return payment;
+  },
+
 
   async uploadProof(lesseeId: string, paymentId: string, proofImageURL: string) {
     const payment = await prisma.payment.findUnique({

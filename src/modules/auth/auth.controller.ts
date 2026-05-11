@@ -7,7 +7,10 @@ import {
   setPasswordSchema,
   verifyOtpSchema,
   activateTenantSchema,
+  lessorSignupSchema,
+  tenantSignupSchema,
 } from './auth.types.js';
+
 import { authService } from './auth.service.js';
 
 export const authController = {
@@ -15,6 +18,12 @@ export const authController = {
     const body = lessorLoginSchema.parse(req.body);
     const data = await authService.lessorLogin(body);
     res.status(200).json({ success: true, data });
+  }),
+
+  lessorSignup: asyncHandler(async (req, res) => {
+    const body = lessorSignupSchema.parse(req.body);
+    const data = await authService.lessorSignup(body);
+    res.status(201).json({ success: true, data });
   }),
 
   lesseeLogin: asyncHandler(async (req, res) => {
@@ -50,4 +59,11 @@ export const authController = {
     const data = await authService.activateTenant(body);
     res.status(200).json({ success: true, data });
   }),
+
+  tenantSignup: asyncHandler(async (req, res) => {
+    const body = tenantSignupSchema.parse(req.body);
+    const data = await authService.tenantSignup(body);
+    res.status(200).json({ success: true, data });
+  }),
 };
+

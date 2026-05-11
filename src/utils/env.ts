@@ -22,4 +22,8 @@ export const env = {
   exposeInviteOtp:
     process.env.EXPOSE_INVITE_OTP === 'true' ||
     (process.env.NODE_ENV !== 'production' && process.env.EXPOSE_INVITE_OTP !== 'false'),
+
+  chapaSecretKey: process.env.CHAPA_SECRET_KEY || 'CHASECK_TEST-xxxxxxxxxxxxxxxx',
+  chapaWebhookSecret: process.env.CHAPA_WEBHOOK_SECRET || '',
 } as const;
+

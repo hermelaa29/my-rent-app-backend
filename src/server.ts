@@ -12,9 +12,10 @@ async function bootstrap(): Promise<void> {
   initScheduler();
   const server = createServer(app);
 
-  server.listen(env.port, () => {
-    console.info(`HTTP server listening on port ${env.port} (${env.nodeEnv})`);
+  server.listen(env.port, '0.0.0.0', () => {
+    console.info(`HTTP server listening on http://localhost:${env.port} (${env.nodeEnv})`);
   });
+
 
   const shutdown = async (signal: string) => {
     console.info(`${signal} received, shutting down gracefully`);

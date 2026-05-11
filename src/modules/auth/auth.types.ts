@@ -21,6 +21,23 @@ export const lessorLoginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+
+export const lessorSignupSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(200),
+  email: z.string().trim().toLowerCase().email('Invalid email address'),
+  phone: z.string().trim().min(5, 'Phone is too short').max(32),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+export const tenantSignupSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required'),
+  email: z.string().trim().toLowerCase().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+
+
+
 export const lesseeLoginSchema = z
   .object({
     email: z.string().trim().toLowerCase().email().optional(),
@@ -72,7 +89,9 @@ export const activateTenantSchema = z.object({
 });
 
 export type LessorLoginInput = z.infer<typeof lessorLoginSchema>;
+export type LessorSignupInput = z.infer<typeof lessorSignupSchema>;
 export type LesseeLoginInput = z.infer<typeof lesseeLoginSchema>;
+
 export type InviteLesseeInput = z.infer<typeof inviteLesseeSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
 export type SetPasswordInput = z.infer<typeof setPasswordSchema>;
