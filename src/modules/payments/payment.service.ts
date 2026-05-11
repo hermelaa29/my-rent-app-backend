@@ -130,24 +130,9 @@ export const paymentService = {
         }
       });
 
-      // 2. Initialize Chapa Transaction
-      const [firstName, ...lastNameParts] = user.name.split(' ');
-      const lastName = lastNameParts.join(' ') || 'Tenant';
-
-      const checkoutUrl = await chapaService.initialize({
-        amount: input.amount,
-        currency: 'ETB',
-        email: user.email,
-        first_name: firstName,
-        last_name: lastName,
-        tx_ref: transactionRef,
-        callback_url: `${env.isProduction ? 'https://your-api.com' : 'http://localhost:3000'}/api/payments/chapa/webhook`, // Optional
-        return_url: `${env.isProduction ? 'https://your-app.com' : 'http://localhost:5173'}/payments/success?tx_ref=${transactionRef}`,
-        customization: {
-          title: `Rent Payment - ${payment.contract.property.title}`,
-          description: `Payment for ${input.month}/${input.year}`,
-        },
-      });
+      // 2. Mock Chapa Transaction (as requested to keep backend clean without API key)
+      // This allows the frontend to proceed to the success page for demonstration
+      const checkoutUrl = `${env.isProduction ? 'https://your-app.com' : 'http://localhost:5173'}/payments/success?tx_ref=${transactionRef}`;
 
       return {
         payment,
@@ -169,7 +154,8 @@ export const paymentService = {
     if (!payment) throw new AppError('Payment not found', 404);
     if (payment.status === PaymentStatus.PAID) return payment;
 
-    const isSuccess = await chapaService.verify(tx_ref);
+    // Mock success for demonstration since API key is not integrated
+    const isSuccess = tx_ref.startsWith('chapa_');
     if (isSuccess) {
       return prisma.payment.update({
         where: { id: payment.id },
@@ -378,12 +364,12 @@ export const paymentService = {
         doc.addPage();
         y = 50;
       }
-      doc.text(p.payer.name, col1, y);
-      doc.text(p.contract.property.title, col2, y, { width: 90 });
+      doc.text(p.payer?.name || 'Unknown', col1, y);
+      doc.text(p.contract?.property?.title || 'Property', col2, y, { width: 90 });
       doc.text(`${p.amount} ETB`, col3, y);
-      doc.text(p.method, col4, y);
+      doc.text(p.method || 'OTHER', col4, y);
       doc.text(`${p.month}/${p.year}`, col5, y);
-      doc.text(p.status, col6, y);
+      doc.text(p.status || 'PENDING', col6, y);
       y += 30;
     });
 

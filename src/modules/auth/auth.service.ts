@@ -18,7 +18,9 @@ import {
   type SetupJwtPayload,
   type VerifyOtpInput,
   type CreateTenantInput,
+  type LessorSignupInput,
 } from './auth.types.js';
+
 
 const BCRYPT_ROUNDS = 12;
 

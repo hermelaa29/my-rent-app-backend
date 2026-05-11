@@ -57,18 +57,19 @@ export const chapaService = {
 
   async verify(tx_ref: string): Promise<boolean> {
     try {
-      const response = await fetch(`https://api.api.chapa.co/v1/transaction/verify/${tx_ref}`, {
+      const response = await fetch(`https://api.chapa.co/v1/transaction/verify/${tx_ref}`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${env.chapaSecretKey}`,
         },
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as { status: string };
       return response.ok && data.status === 'success';
     } catch (error) {
       console.error('[CHAPA VERIFY ERROR]', error);
       return false;
     }
   },
+
 };
