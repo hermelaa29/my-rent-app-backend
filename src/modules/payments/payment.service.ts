@@ -9,8 +9,8 @@ import { randomUUID } from 'node:crypto';
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../utils/app-error.js';
 import type { ChapaInitInput, CreatePaymentInput } from './payment.types.js';
-import { chapaService } from './chapa.service.js';
 import { env } from '../../utils/env.js';
+
 
 
 const userPublic = {
