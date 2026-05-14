@@ -7,6 +7,7 @@ const router = Router();
 
 router.post('/lessor/login', authController.lessorLogin);
 router.post('/lessee/login', authController.lesseeLogin);
+router.post('/tenant/signup', authController.tenantSignup);
 router.post('/verify-otp', authController.verifyOtp);
 router.post('/set-password', authController.setPassword);
 router.post(

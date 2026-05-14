@@ -5,6 +5,7 @@ import {
   lesseeLoginSchema,
   lessorLoginSchema,
   setPasswordSchema,
+  tenantSignupSchema,
   verifyOtpSchema,
 } from './auth.types.js';
 import { authService } from './auth.service.js';
@@ -20,6 +21,12 @@ export const authController = {
     const body = lesseeLoginSchema.parse(req.body);
     const data = await authService.lesseeLogin(body);
     res.status(200).json({ success: true, data });
+  }),
+
+  tenantSignup: asyncHandler(async (req, res) => {
+    const body = tenantSignupSchema.parse(req.body);
+    const data = await authService.tenantSignup(body);
+    res.status(201).json({ success: true, data });
   }),
 
   inviteLessee: asyncHandler(async (req, res) => {

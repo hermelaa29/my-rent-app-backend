@@ -45,6 +45,8 @@ router.post(
 );
 router.post('/:id/approve', requireRole(UserRole.LESSOR), paymentController.approve);
 router.post('/:id/reject', requireRole(UserRole.LESSOR), paymentController.reject);
+router.get('/summary', paymentController.summary);
+router.get('/contract/:contractId', paymentController.getByContract);
 router.get('/', paymentController.list);
 router.get('/:id', paymentController.getById);
 

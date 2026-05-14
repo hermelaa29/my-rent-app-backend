@@ -8,7 +8,7 @@ export const notificationService = {
     const payments = await prisma.payment.findMany({
       where: {
         contract: { lessorId },
-        status: { in: [PaymentStatus.PENDING, PaymentStatus.LATE] },
+        status: { in: [PaymentStatus.PENDING] },
       },
       include: {
         contract: {
@@ -40,8 +40,8 @@ export const notificationService = {
           amount: p.amount,
         });
       } 
-      // Overdue: today > reminderDay or status is LATE
-      else if (diffDays < 0 || p.status === PaymentStatus.LATE) {
+      // Overdue: today is past the reminder day
+      else if (diffDays < 0) {
         overdue.push({
           paymentId: p.id,
           tenantName: p.contract.lessee.name,
@@ -100,7 +100,6 @@ export const notificationService = {
             where: { id: pendingPayment.id },
             data: {
               amount: pendingPayment.amount + lateFee,
-              status: PaymentStatus.LATE,
             },
           });
         }

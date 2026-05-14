@@ -15,6 +15,7 @@ import {
   type PublicUser,
   type SetPasswordInput,
   type SetupJwtPayload,
+  type TenantSignupInput,
   type VerifyOtpInput,
 } from './auth.types.js';
 
@@ -127,6 +128,46 @@ export const authService = {
     if (!match) {
       throw new AppError('Invalid credentials', 401);
     }
+    return {
+      token: signAccessToken(user.id, user.role),
+      user: toPublicUser(user),
+    };
+  },
+
+  async tenantSignup(input: TenantSignupInput): Promise<{ token: string; user: PublicUser }> {
+    const existingEmail = await prisma.user.findUnique({ where: { email: input.email } });
+
+    let user;
+    const hashedPassword = await hashPassword(input.password);
+
+    if (existingEmail !== null) {
+      if (existingEmail.role !== UserRole.LESSEE) {
+        throw new AppError('A user with this email already exists', 409);
+      }
+
+      user = await prisma.user.update({
+        where: { id: existingEmail.id },
+        data: {
+          name: input.name,
+          password: hashedPassword,
+          isVerified: true,
+          otpCode: null,
+          otpExpires: null,
+        },
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          name: input.name,
+          email: input.email,
+          phone: `tenant-${randomBytes(6).toString('hex')}`,
+          password: hashedPassword,
+          role: UserRole.LESSEE,
+          isVerified: true,
+        },
+      });
+    }
+
     return {
       token: signAccessToken(user.id, user.role),
       user: toPublicUser(user),

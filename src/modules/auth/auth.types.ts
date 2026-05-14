@@ -57,11 +57,21 @@ export const setPasswordSchema = z.object({
     .max(128, 'Password is too long'),
 });
 
+export const tenantSignupSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  email: z.string().trim().toLowerCase().email(),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password is too long'),
+});
+
 export type LessorLoginInput = z.infer<typeof lessorLoginSchema>;
 export type LesseeLoginInput = z.infer<typeof lesseeLoginSchema>;
 export type InviteLesseeInput = z.infer<typeof inviteLesseeSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
 export type SetPasswordInput = z.infer<typeof setPasswordSchema>;
+export type TenantSignupInput = z.infer<typeof tenantSignupSchema>;
 
 export interface PublicUser {
   id: string;

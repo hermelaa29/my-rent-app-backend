@@ -235,4 +235,42 @@ export const paymentService = {
     }
     return payment;
   },
+
+  async getSummaryForUser(userId: string, role: UserRole) {
+    const where =
+      role === 'LESSOR'
+        ? { contract: { lessorId: userId } }
+        : { userId };
+
+    const payments = await prisma.payment.findMany({
+      where,
+      select: {
+        amount: true,
+        status: true,
+      },
+    });
+
+    const totalPaid = payments
+      .filter((p) => p.status === PaymentStatus.APPROVED)
+      .reduce((sum, p) => sum + p.amount, 0);
+
+    const totalUnpaid = payments
+      .filter((p) => p.status === PaymentStatus.PENDING)
+      .reduce((sum, p) => sum + p.amount, 0);
+
+    return {
+      totalPaid,
+      totalUnpaid,
+      overdueCount: 0,
+      upcomingDueCount: 0,
+    };
+  },
+
+  async getByContractId(contractId: string) {
+    return prisma.payment.findMany({
+      where: { contractId },
+      select: paymentSelect,
+      orderBy: { createdAt: 'desc' },
+    });
+  },
 };

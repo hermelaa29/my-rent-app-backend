@@ -10,6 +10,7 @@ import { healthRouter } from './modules/health/index.js';
 import { paymentRouter } from './modules/payments/index.js';
 import { propertyRouter } from './modules/property/index.js';
 import { reminderRouter } from './modules/reminders/index.js';
+import { userRouter } from './modules/user/user.routes.js';
 
 export function createApp() {
   const app = express();
@@ -27,6 +28,7 @@ export function createApp() {
   app.use('/contracts', contractRouter);
   app.use('/payments', paymentRouter);
   app.use('/reminders', reminderRouter);
+  app.use('/users', userRouter);
   app.use('/uploads', express.static('uploads'));
 
   app.use(notFoundMiddleware);

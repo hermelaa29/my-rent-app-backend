@@ -16,6 +16,7 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   jwtSetupExpiresIn: process.env.JWT_SETUP_EXPIRES_IN ?? '30m',
   otpTtlMinutes: Number.parseInt(process.env.OTP_TTL_MINUTES ?? '15', 10),
+  chapaSecretKey: process.env.CHAPA_SECRET_KEY ?? 'test-chapa-key',
   /**
    * When true, POST /auth/invite-lessee includes `otp` in JSON (avoid in production; use SMS/email).
    */

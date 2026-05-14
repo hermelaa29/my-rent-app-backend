@@ -1,7 +1,7 @@
 import { asyncHandler } from '../../utils/async-handler.js';
 import { userService } from './user.service.js';
 import { AppError } from '../../utils/app-error.js';
-import { createTenantSchema } from '../auth/auth.types.js';
+import { inviteLesseeSchema } from '../auth/auth.types.js';
 import { authService } from '../auth/auth.service.js';
 
 function requireLessorId(req: any): string {
@@ -28,8 +28,8 @@ export const userController = {
 
   createTenant: asyncHandler(async (req, res) => {
     const lessorId = requireLessorId(req);
-    const body = createTenantSchema.parse(req.body);
-    const result = await authService.createTenant(lessorId, body);
+    const body = inviteLesseeSchema.parse(req.body);
+    const result = await authService.inviteLessee(lessorId, body);
     res.status(201).json({ success: true, data: result });
   }),
 

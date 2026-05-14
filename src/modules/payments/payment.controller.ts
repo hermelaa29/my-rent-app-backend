@@ -72,4 +72,17 @@ export const paymentController = {
     const data = await paymentService.getByIdForUser(user.id, user.role, id);
     res.status(200).json({ success: true, data });
   }),
+
+  summary: asyncHandler(async (req, res) => {
+    const user = requireUser(req);
+    const data = await paymentService.getSummaryForUser(user.id, user.role);
+    res.status(200).json({ success: true, data });
+  }),
+
+  getByContract: asyncHandler(async (req, res) => {
+    const { contractId } = req.params as { contractId?: string };
+    if (!contractId) throw new AppError('Contract ID is required', 400);
+    const data = await paymentService.getByContractId(contractId);
+    res.status(200).json({ success: true, data });
+  }),
 };

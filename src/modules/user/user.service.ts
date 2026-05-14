@@ -8,7 +8,7 @@ export const userService = {
    * Data isolation: a lessor can only see their own tenants.
    */
   async listLessees(lessorId: string) {
-    return prisma.user.findMany({
+    const tenants = await prisma.user.findMany({
       where: {
         role: UserRole.LESSEE,
         invitedByLessorId: lessorId,
@@ -18,11 +18,7 @@ export const userService = {
         name: true,
         email: true,
         phone: true,
-        isActive: true,
         isVerified: true,
-        address: true,
-        passportInfo: true,
-        photoUrl: true,
         createdAt: true,
         contractsAsLessee: {
           select: {
@@ -39,6 +35,11 @@ export const userService = {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return tenants.map((tenant) => ({
+      ...tenant,
+      isActive: tenant.isVerified,
+    }));
   },
 
   async getTenantById(lessorId: string, id: string) {
